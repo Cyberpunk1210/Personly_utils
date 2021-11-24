@@ -157,6 +157,6 @@ def test_loop(data, model, loss):
     test_loss /= num_batches
     print(f"Avg loss:{test_loss:.4f}")
         
-train_loop(tsdata_train, model, loss_fn, optimizer)
+train_loop(tsdata_train, with_attention_model, loss_fn, optimizer)
 print('train completed.')
-test_loop(tsdata_test, model, loss_fn)
+test_loop(tsdata_test, with_attention_model, loss_fn)
