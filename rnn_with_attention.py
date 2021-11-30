@@ -81,7 +81,7 @@ class Seq2Seq(nn.Module):
         self.output_dim = output_dim
         self.encoder_gru = nn.GRU(self.input_dim, self.hidden_dim, self.num_layers, dropout=dropout, batch_first=True)
         self.fc = nn.Linear(self.hidden_dim*2, self.hidden_dim)
-        self.decoder_gru = nn.GRU(self.hidden_dim+self.output_dim, hidden_dim, num_layers, dropout=dropout, batch_first=True)
+        self.decoder_gru = nn.GRU(self.hidden_dim+self.output_dim, hidden_dim, self.num_layers, dropout=dropout, batch_first=True)
         self.attn = nn.Linear(self.hidden_dim*2, self.hidden_dim)
         self.attn_out = nn.Linear(self.hidden_dim, self.output_dim)
         self.fc_out = nn.Linear(self.hidden_dim*2, self.output_dim)
@@ -95,7 +95,6 @@ class Seq2Seq(nn.Module):
         enc_output, enc_hidden = self.encoder_gru(inq)
         s = torch.tanh(self.fc(torch.cat((enc_hidden[-2, :, :], enc_hidden[-1, :, :]), dim=1)))
         # return enc_output, s
-        # attn
 
         # decoder
         # c is [batch_size, 1, hidden]
@@ -130,6 +129,7 @@ class Seq2Seq(nn.Module):
 with_attention_model = Seq2Seq(input_dim=32, hidden_dim=32, num_layers=2, dropout=0.1, output_dim=1, future_seq_len=2)
 seq2seq_model = LSTMSeq2Seq(input_feature_num=32, future_seq_len=2, output_feature_num=1, lstm_hidden_dim=32, lstm_layer_num=2, teacher_forcing=True)
 loss_fn = torch.nn.MSELoss()
+epochs = 5
 optimizer = torch.optim.Adam(with_attention_model.parameters(), lr=1e-3)
 
 
@@ -142,8 +142,8 @@ def train_loop(data, model, loss, optimizer, val_data=None):
         optimizer.zero_grad()
         l.backward()
         optimizer.step()
-        if batch % 20 == 0:
-            print(f'loss is: {l.item():.4f}')
+        if batch % 50 == 0:
+            print(f'loss is ======================>{l.item():.4f}')
         
 def test_loop(data, model, loss):
     data = get_data(data)
@@ -156,7 +156,9 @@ def test_loop(data, model, loss):
             test_loss += loss(pred, y).item()
     test_loss /= num_batches
     print(f"Avg loss:{test_loss:.4f}")
-        
-train_loop(tsdata_train, with_attention_model, loss_fn, optimizer)
-print('train completed.')
-test_loop(tsdata_test, with_attention_model, loss_fn)
+
+for i in range(epochs):
+    print(f"train start, No.{i+1}")
+    train_loop(tsdata_train, with_attention_model, loss_fn, optimizer)
+    test_loop(tsdata_test, with_attention_model, loss_fn)
+print('Done.')
